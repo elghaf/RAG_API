@@ -1,247 +1,187 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertCircle, BarChart, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-const DashboardPanel = ({ title, children, isOpen, onToggle }) => (
-  <Card className="flex flex-col">
-    <CardHeader className="cursor-pointer" onClick={onToggle}>
-      <div className="flex justify-between items-center">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-gray-500" />
-        ) : (
-          <ChevronDown className="w-5 h-5 text-gray-500" />
-        )}
-      </div>
-    </CardHeader>
-    {isOpen && <CardContent>{children}</CardContent>}
-  </Card>
-);
+import { AlertCircle } from 'lucide-react';
+import { DataSourcesPanel } from './DataSourcesPanel';
+import { VisualizationPanel } from './VisualizationPanel';
+import { TablesPanel } from './TablesPanel';
+import { ChatPanel } from './ChatPanel';
 
 const RagDashboard = () => {
-  const [ws, setWs] = useState(null);
+  // State declarations (unchanged for logic)
+  const [ws, setWs] = useState<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [query, setQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [chartData, setChartData] = useState([]);
-  const [tableData, setTableData] = useState([]);
-  
-  // Panel visibility states
   const [visiblePanels, setVisiblePanels] = useState({
+    datasource: true,
     visualization: true,
     tables: true,
-    chat: true
+    chat: true,
   });
 
-  // Toggle panel visibility
-  const togglePanel = (panelName) => {
-    setVisiblePanels(prev => ({
+  const togglePanel = (panelName: string) => {
+    setVisiblePanels((prev) => ({
       ...prev,
-      [panelName]: !prev[panelName]
+      [panelName]: !prev[panelName],
     }));
   };
 
-  // Initialize WebSocket connection
   useEffect(() => {
     const websocket = new WebSocket('ws://localhost:8000/ws');
-
     websocket.onopen = () => {
       setConnected(true);
       setError(null);
     };
-
     websocket.onclose = () => {
       setConnected(false);
       setError('Connection lost. Trying to reconnect...');
     };
-
     websocket.onerror = (error) => {
-      setError('WebSocket error: ' + error.message);
+      setError(`WebSocket error: ${error.toString()}`);
     };
-
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       handleIncomingMessage(data);
     };
-
     setWs(websocket);
-
     return () => {
       websocket.close();
     };
   }, []);
 
-  const handleIncomingMessage = useCallback((data) => {
+  const handleIncomingMessage = useCallback((data: any) => {
     setLoading(false);
-
     if (data.error) {
       setError(data.error);
       return;
     }
-
     if (data.type === 'data_update') {
-      // Update chart data
-      setChartData(prevData => {
-        const newData = Object.entries(data.data).map(([timestamp, values]) => ({
-          timestamp,
-          ...values
-        }));
-        return [...prevData, ...newData].slice(-50);
-      });
-      // Update table data
-      setTableData(prevData => {
-        const newData = Object.entries(data.data).map(([timestamp, values]) => ({
-          timestamp,
-          ...values
-        }));
-        return [...prevData, ...newData];
-      });
+      updateData(data.data);
     }
-
-    setMessages(prev => [...prev, {
-      timestamp: new Date().toISOString(),
-      content: data.answer || 'Update received',
-      visualization: data.visualization,
-      table: data.table
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        timestamp: new Date().toISOString(),
+        content: data.answer || 'Update received',
+        visualization: data.visualization,
+        table: data.table,
+      },
+    ]);
   }, []);
 
-  const sendQuery = useCallback(() => {
-    if (!connected || !query.trim()) return;
-    setLoading(true);
-    setError(null);
-    ws.send(query);
-    setQuery('');
-  }, [connected, query, ws]);
+  const updateData = (data: any) => {
+    const newData = Object.entries(data).map(([timestamp, values]) => ({
+      timestamp,
+      ...values,
+    }));
+    setChartData((prevData) => [...prevData, ...newData].slice(-50));
+    setTableData((prevData) => [...prevData, ...newData]);
+  };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendQuery();
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const uploadedFiles = Array.from(event.target.files);
+    setFiles((prev) => [...prev, ...uploadedFiles]);
+    const formData = new FormData();
+    uploadedFiles.forEach((file) => formData.append('files', file));
+    try {
+      const response = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      setError(`File upload failed: ${error.toString()}`);
     }
   };
 
+  const handleDatabaseConnect = (config: any) => {
+    if (!ws) return;
+    ws.send(JSON.stringify({ type: 'connect_database', config }));
+  };
+
+  const handleSendMessage = (message: string) => {
+    if (!ws || !connected || !message.trim()) return;
+    setLoading(true);
+    setError(null);
+    ws.send(message);
+  };
+
   return (
-    <div className="flex flex-col h-screen p-4 bg-gray-50">
-      {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold mb-2">Real-time RAG Dashboard</h1>
+    <div className="flex flex-col h-screen w-full bg-gradient-to-b from-blue-50 via-white to-blue-100">
+      {/* Header Section */}
+      <header className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-lg">
+        <h1 className="text-3xl font-bold">Real-time RAG Dashboard</h1>
         <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <span className="text-sm text-gray-600">
+          <div className={`w-4 h-4 rounded-full ${connected ? 'bg-green-300' : 'bg-red-400'}`} />
+          <span className="text-lg font-medium">
             {connected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
-      </div>
+      </header>
 
       {/* Error Alert */}
       {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="p-4">
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-6 w-6" />
+            <AlertDescription className="text-lg">{error}</AlertDescription>
+          </Alert>
+        </div>
       )}
 
       {/* Main Content */}
-      <div className="grid gap-4 flex-grow">
-        {/* Visualization Panel */}
-        <DashboardPanel 
-          title="Real-time Visualization" 
-          isOpen={visiblePanels.visualization}
-          onToggle={() => togglePanel('visualization')}
-        >
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" />
-              </LineChart>
-            </ResponsiveContainer>
+      <main className="flex-grow p-6 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 h-full">
+          {/* Panels */}
+          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.datasource ? '' : 'hidden'}`}>
+            <DataSourcesPanel
+              isOpen={visiblePanels.datasource}
+              onToggle={() => togglePanel('datasource')}
+              files={files}
+              onFileUpload={handleFileUpload}
+              onDatabaseConnect={handleDatabaseConnect}
+            />
           </div>
-        </DashboardPanel>
+          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.visualization ? '' : 'hidden'}`}>
+            <VisualizationPanel
+              isOpen={visiblePanels.visualization}
+              onToggle={() => togglePanel('visualization')}
+              chartData={chartData}
+            />
+          </div>
+          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.tables ? '' : 'hidden'}`}>
+            <TablesPanel
+              isOpen={visiblePanels.tables}
+              onToggle={() => togglePanel('tables')}
+              tableData={tableData}
+            />
+          </div>
+          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.chat ? '' : 'hidden'}`}>
+            <ChatPanel
+              isOpen={visiblePanels.chat}
+              onToggle={() => togglePanel('chat')}
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              loading={loading}
+              connected={connected}
+            />
+          </div>
+        </div>
+      </main>
 
-        {/* Tables Panel */}
-        <DashboardPanel 
-          title="Data Tables" 
-          isOpen={visiblePanels.tables}
-          onToggle={() => togglePanel('tables')}
-        >
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {tableData.map((row, idx) => (
-                  <tr key={idx}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {row.timestamp}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {row.value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </DashboardPanel>
-
-        {/* Chat Panel */}
-        <DashboardPanel 
-          title="Query & Chat" 
-          isOpen={visiblePanels.chat}
-          onToggle={() => togglePanel('chat')}
-        >
-          <div className="flex flex-col space-y-4">
-            <div className="flex-grow overflow-auto max-h-[300px] space-y-4">
-              {messages.map((msg, idx) => (
-                <div key={idx} className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-sm text-gray-500 mb-1">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </div>
-                  <div className="text-gray-900">{msg.content}</div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask a question about your data..."
-                disabled={!connected || loading}
-                className="flex-grow"
-              />
-              <Button
-                onClick={sendQuery}
-                disabled={!connected || loading || !query.trim()}
-              >
-                <ChevronRight className="w-4 h-4 mr-1" />
-                Send
-              </Button>
-            </div>
-          </div>
-        </DashboardPanel>
-      </div>
+      {/* Footer */}
+      <footer className="p-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-center shadow-lg">
+        © {new Date().getFullYear()} RAG Dashboard - All rights reserved.
+      </footer>
     </div>
   );
 };
