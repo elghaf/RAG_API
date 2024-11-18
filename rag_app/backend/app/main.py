@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from services.rag_service import RAGService
+from .services.rag_service import RAGService
 from .db.mongodb import MongoDB
 import cloudinary
 from .config import settings
@@ -68,6 +68,8 @@ async def shutdown_db_client():
 
 # WebSocket management
 connected_clients = set()
+
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
