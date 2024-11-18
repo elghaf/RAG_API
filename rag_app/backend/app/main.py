@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+
+from services.rag_service import RAGService
 from .db.mongodb import MongoDB
 import cloudinary
 from .config import settings
@@ -70,14 +72,22 @@ connected_clients = set()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    connected_clients.add(websocket)
-    print(f"Client connected: {websocket.client}")
+    rag_service = RAGService()
+    
     try:
         while True:
-            data = await websocket.receive_text()
-            print(f"Received data: {data}")
-            # You can add any custom logic here for processing the data
-            await websocket.send_text(f"Server received: {data}")
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "query":
+                response = await rag_service.process_query(
+                    query=data["query"],
+                    pdf_id=data.get("pdf_id")
+                )
+                
+                await websocket.send_json({
+                    "answer": response["answer"],
+                    "visualizations": response["visualizations"]
+                })
+                
     except WebSocketDisconnect:
-        connected_clients.remove(websocket)
-        print(f"Client disconnected: {websocket.client}")
+        print("Client disconnected")

@@ -101,6 +101,7 @@ export const DataSourcesPanel = ({
   return (
     <DashboardPanel title="Data Sources" isOpen={isOpen} onToggle={onToggle}>
       <div className="space-y-4">
+        {/* Upload Button */}
         <div className="flex gap-4">
           <Dialog>
             <DialogTrigger asChild>
@@ -125,6 +126,7 @@ export const DataSourcesPanel = ({
           </Dialog>
         </div>
 
+        {/* Uploaded Files List */}
         <div className="space-y-2">
           {uploadedFiles.length > 0 ? (
             <div>
@@ -132,16 +134,27 @@ export const DataSourcesPanel = ({
               <ul className="list-disc pl-5">
                 {uploadedFiles.map((file) => (
                   <li key={file.id}>
-                    <span>{file.filename}</span>
-                    <div className="mt-2">
-                      <iframe
-                        src={file.url}
-                        title={file.filename}
-                        width="100%"
-                        height="400"
-                        className="border rounded"
-                      />
-                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="link" className="p-0">
+                          {file.filename}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl h-full">
+                        <DialogHeader>
+                          <DialogTitle>{file.filename}</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-2 h-full">
+                          <iframe
+                            src={file.url}
+                            title={file.filename}
+                            width="100%"
+                            height="600"
+                            className="border rounded h-full"
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </li>
                 ))}
               </ul>
@@ -151,6 +164,7 @@ export const DataSourcesPanel = ({
           )}
         </div>
 
+        {/* Message Display */}
         {message && <p className="mt-4 text-green-500">{message}</p>}
       </div>
     </DashboardPanel>
