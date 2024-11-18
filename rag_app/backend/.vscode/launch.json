@@ -5,7 +5,8 @@
             "name": "Python: Uvicorn Debugger (Base Conda)",
             "type": "debugpy",
             "request": "launch",
-            "program": "C:/Users/ayoub/anaconda3/Scripts/uvicorn.exe",
+            
+            "program": "C:/Users/ayelg/anaconda3/Scripts/uvicorn.exe",
             "args": [
                 "app.main:app",
                 "--reload"

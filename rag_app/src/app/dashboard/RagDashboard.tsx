@@ -25,7 +25,9 @@ const RagDashboard = () => {
     chat: true,
   });
 
-  const togglePanel = (panelName: 'datasource' | 'visualization' | 'tables' | 'chat') => {
+  const togglePanel = (
+    panelName: 'datasource' | 'visualization' | 'tables' | 'chat'
+  ) => {
     setVisiblePanels((prev) => ({
       ...prev,
       [panelName]: !prev[panelName],
@@ -120,12 +122,16 @@ const RagDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-gradient-to-b from-blue-50 via-white to-blue-100">
+    <div className="flex flex-col h-screen w-full bg-gradient-to-b from-gray-100 via-gray-50 to-gray-100">
       {/* Header Section */}
-      <header className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-lg">
+      <header className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-200 to-indigo-300 text-gray-800 shadow-lg">
         <h1 className="text-3xl font-bold">Real-time RAG Dashboard</h1>
         <div className="flex items-center gap-2">
-          <div className={`w-4 h-4 rounded-full ${connected ? 'bg-green-300' : 'bg-red-400'}`} />
+          <div
+            className={`w-4 h-4 rounded-full ${
+              connected ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          />
           <span className="text-lg font-medium">
             {connected ? 'Connected' : 'Disconnected'}
           </span>
@@ -144,46 +150,57 @@ const RagDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-grow p-6 overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 h-full">
-          {/* Panels */}
-          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.datasource ? '' : 'hidden'}`}>
-            <DataSourcesPanel
-              isOpen={visiblePanels.datasource}
-              onToggle={() => togglePanel('datasource')}
-              files={files}
-              onFileUpload={handleFileUpload}
-              onDatabaseConnect={handleDatabaseConnect}
-            />
+        <div className="flex h-full">
+          {/* Left Side Panels */}
+          <div className="w-2/5 flex flex-col gap-6">
+            {visiblePanels.datasource && (
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg p-6 flex flex-col text-gray-800">
+                <DataSourcesPanel
+                  isOpen={visiblePanels.datasource}
+                  onToggle={() => togglePanel('datasource')}
+                  files={files}
+                  onFileUpload={handleFileUpload}
+                  onDatabaseConnect={handleDatabaseConnect}
+                />
+              </div>
+            )}
+            {visiblePanels.visualization && (
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg p-6 flex flex-col text-gray-800">
+                <VisualizationPanel
+                  isOpen={visiblePanels.visualization}
+                  onToggle={() => togglePanel('visualization')}
+                  chartData={chartData}
+                />
+              </div>
+            )}
+            {visiblePanels.tables && (
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg p-6 flex flex-col text-gray-800">
+                <TablesPanel
+                  isOpen={visiblePanels.tables}
+                  onToggle={() => togglePanel('tables')}
+                  tableData={tableData}
+                />
+              </div>
+            )}
           </div>
-          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.visualization ? '' : 'hidden'}`}>
-            <VisualizationPanel
-              isOpen={visiblePanels.visualization}
-              onToggle={() => togglePanel('visualization')}
-              chartData={chartData}
-            />
-          </div>
-          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.tables ? '' : 'hidden'}`}>
-            <TablesPanel
-              isOpen={visiblePanels.tables}
-              onToggle={() => togglePanel('tables')}
-              tableData={tableData}
-            />
-          </div>
-          <div className={`col-span-1 bg-white rounded-lg shadow-md p-6 flex flex-col ${visiblePanels.chat ? '' : 'hidden'}`}>
-            <ChatPanel
-              isOpen={visiblePanels.chat}
-              onToggle={() => togglePanel('chat')}
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              loading={loading}
-              connected={connected}
-            />
-          </div>
+          {/* Right Side Chat Panel */}
+          {visiblePanels.chat && (
+            <div className="w-3/5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg p-6 flex flex-col text-gray-800">
+              <ChatPanel
+                isOpen={visiblePanels.chat}
+                onToggle={() => togglePanel('chat')}
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                loading={loading}
+                connected={connected}
+              />
+            </div>
+          )}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="p-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-center shadow-lg">
+      <footer className="p-4 bg-gradient-to-r from-purple-200 to-indigo-300 text-gray-800 text-center shadow-lg">
         © {new Date().getFullYear()} RAG Dashboard - All rights reserved.
       </footer>
     </div>
