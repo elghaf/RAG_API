@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { DataSourcesPanel } from './DataSourcesPanel';
-import { VisualizationPanel } from './VisualizationPanel';
-import { TablesPanel } from './TablesPanel';
-import { ChatPanel } from './ChatPanel';
+import { DataSourcesPanel } from './panel/DataSourcesPanel';
+import { VisualizationPanel } from './panel/VisualizationPanel';
+import { TablesPanel } from './panel/TablesPanel';
+import { ChatPanel } from './panel/ChatPanel';
 
 const RagDashboard = () => {
   // State declarations (unchanged for logic)
@@ -25,7 +25,7 @@ const RagDashboard = () => {
     chat: true,
   });
 
-  const togglePanel = (panelName: string) => {
+  const togglePanel = (panelName: 'datasource' | 'visualization' | 'tables' | 'chat') => {
     setVisiblePanels((prev) => ({
       ...prev,
       [panelName]: !prev[panelName],
@@ -78,7 +78,7 @@ const RagDashboard = () => {
   const updateData = (data: any) => {
     const newData = Object.entries(data).map(([timestamp, values]) => ({
       timestamp,
-      ...values,
+      ...(typeof values === 'object' && values !== null ? values : {}),
     }));
     setChartData((prevData) => [...prevData, ...newData].slice(-50));
     setTableData((prevData) => [...prevData, ...newData]);
@@ -99,7 +99,11 @@ const RagDashboard = () => {
         throw new Error('Upload failed');
       }
     } catch (error) {
-      setError(`File upload failed: ${error.toString()}`);
+      if (error instanceof Error) {
+        setError(`File upload failed: ${error.toString()}`);
+      } else {
+        setError('File upload failed: Unknown error');
+      }
     }
   };
 
