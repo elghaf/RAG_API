@@ -190,7 +190,7 @@ const RagDashboard = () => {
                 isOpen={visiblePanels.chat}
                 onToggle={() => togglePanel('chat')}
                 messages={messages}
-                onSendMessage={handleSendMessage}
+                sendMessage={handleSendMessage}
                 loading={loading}
                 connected={connected}
               />
