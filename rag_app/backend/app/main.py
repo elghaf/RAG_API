@@ -1,7 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from .services.rag_service import RAGService
 from .db.mongodb import MongoDB
 import cloudinary
 from .config import settings
