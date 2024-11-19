@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DashboardPanel } from './DashboardPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import VisualizationPanel from './VisualizationPanel';
 
 interface Message {
   timestamp: string;
@@ -37,6 +38,7 @@ export const ChatPanel = ({
   const [isLoading, setIsLoading] = useState(loading);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [snapshotData, setSnapshotData] = useState<string | null>(null);
 
   // Fetch the list of uploaded PDFs
   useEffect(() => {
@@ -126,23 +128,14 @@ export const ChatPanel = ({
       return;
     }
 
-    console.log('Sending query:', { pdf_id: selectedFile.id, query: message });
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        'http://localhost:8000/api/v1/query',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            pdf_id: selectedFile.id,
-            query: message,
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:8000/api/v1/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_id: selectedFile.id, query: message }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -150,6 +143,20 @@ export const ChatPanel = ({
       }
 
       const result = await response.json();
+
+      // Fetch the snapshot for the query
+      const snapshotResponse = await fetch(
+        `http://localhost:8000/api/v1/snapshot/${selectedFile.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: message }),
+        }
+      );
+      const snapshotData = await snapshotResponse.json(); // Assuming it returns an image URL or base64 string
+
+      // Update visualization data
+      setSnapshotData(snapshotData.imageUrl || snapshotData.base64Data);
 
       // Add the user query and server response to chat messages
       const newMessages = [
@@ -160,21 +167,19 @@ export const ChatPanel = ({
         },
         {
           timestamp: new Date().toISOString(),
-          content: `Response: ${
-            result.response || 'No response received from the server.'
-          }`,
+          content: `Response: ${result.response || 'No response received from the server.'}`,
         },
       ];
       setChatMessages(newMessages);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = {
-        timestamp: new Date().toISOString(),
-        content: `Error: Unable to process your query. ${
-          (error as Error).message
-        }`,
-      };
-      setChatMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setChatMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          timestamp: new Date().toISOString(),
+          content: `Error: Unable to process your query. ${(error as Error).message}`,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -254,6 +259,28 @@ export const ChatPanel = ({
           </Button>
         </form>
       </div>
+
+      {/* Visualization Panel */}
+      <VisualizationPanel selectedPage={selectedFile?.id} snapshotData={snapshotData} />
     </DashboardPanel>
+  );
+};
+
+const VisualizationPanel = ({ selectedPage, snapshotData }) => {
+  return (
+    <div className="visualization-panel">
+      <h2>Visualization</h2>
+      <div className="visualization-content">
+        {snapshotData ? (
+          <img
+            src={snapshotData}
+            alt="PDF Snapshot"
+            className="max-w-full max-h-[400px] rounded-md border"
+          />
+        ) : (
+          'No snapshot available. Please make a query to generate a snapshot.'
+        )}
+      </div>
+    </div>
   );
 };
