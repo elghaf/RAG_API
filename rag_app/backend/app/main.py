@@ -9,6 +9,7 @@ from .api.endpoints import pdf, query  # Add query import
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
+### need to work 
 
 app = FastAPI(title="PDF Query System")
 
