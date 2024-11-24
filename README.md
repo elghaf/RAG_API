@@ -4,6 +4,4 @@ We gonna create RAG application that can use docs to improve specifique answer.
 Part of load split(to chunk) Embed(chunk) store
 
 
-
-
 ## start creating the retriver
