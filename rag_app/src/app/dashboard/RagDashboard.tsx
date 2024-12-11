@@ -8,6 +8,7 @@ import { VisualizationPanel } from './panel/VisualizationPanel';
 import { TablesPanel } from './panel/TablesPanel';
 import { ChatPanel } from './panel/ChatPanel';
 
+
 const RagDashboard = () => {
   // State declarations (unchanged for logic)
   const [ws, setWs] = useState<WebSocket | null>(null);
