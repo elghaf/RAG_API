@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 ### need to work 
 
+
 app = FastAPI(title="PDF Query System")
 
 # Configure CORS
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Include routers
 app.include_router(pdf.router, prefix="/api/v1", tags=["pdf"])
