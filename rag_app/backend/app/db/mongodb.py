@@ -58,7 +58,8 @@ class MongoDB:
             # Insert document into MongoDB
             result = await cls.db.pdfs.insert_one(pdf_doc)
             return str(result.inserted_id)
-            
+
+        
         except KeyError as ke:
             logger.error(f"Missing required field in cloudinary_data: {ke}")
             raise Exception(f"Missing required field in metadata: {ke}")
