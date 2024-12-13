@@ -8,6 +8,7 @@ class MongoDB:
     client = None
     db = None
 
+    
     @classmethod
     async def connect_db(cls):
         try:
