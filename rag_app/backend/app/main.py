@@ -39,7 +39,6 @@ app.include_router(query.router, prefix="/api/v1", tags=["query"])  # Add query 
 #
 #    return {"message": "Files uploaded successfully"}
 
-
 # Register routes
 @app.get("/")
 async def root():
