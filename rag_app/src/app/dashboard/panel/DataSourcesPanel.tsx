@@ -17,6 +17,7 @@ interface DataSourcesPanelProps {
   onToggle: () => void;
   files: File[];
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onDatabaseConnect?: (config: any) => void;
 }
 
 interface UploadedFile {
@@ -30,6 +31,7 @@ export const DataSourcesPanel = ({
   onToggle,
   files,
   onFileUpload,
+  onDatabaseConnect,
 }: DataSourcesPanelProps) => {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);

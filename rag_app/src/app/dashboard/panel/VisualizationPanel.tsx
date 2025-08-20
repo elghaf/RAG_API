@@ -21,10 +21,11 @@ interface VisualizationData {
 interface VisualizationPanelProps {
   isOpen: boolean;
   onToggle: () => void;
-  visualizations: VisualizationData[];
+  visualizations?: VisualizationData[];
+  chartData?: any[];
 }
 
-export const VisualizationPanel = ({ isOpen, onToggle, visualizations }: VisualizationPanelProps) => {
+export const VisualizationPanel = ({ isOpen, onToggle, visualizations = [], chartData = [] }: VisualizationPanelProps) => {
   const [activeTab, setActiveTab] = useState<string>("0");
 
   const renderVisualization = (visualization: VisualizationData) => {
