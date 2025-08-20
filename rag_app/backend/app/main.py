@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .db.mongodb import MongoDB
 import cloudinary
 from .config import settings
-from .api.endpoints import pdf, query  # Add query import
+from .api.endpoints import pdf, query, resume  # Add resume import
+from .services.rag_service import RAGService  # Add RAGService import
 # app/main.py or in an appropriate route file
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 ### need to work 
 
 
-app = FastAPI(title="PDF Query System")
+app = FastAPI(title="PDF Query & Resume System")
 
 # Configure CORS
 app.add_middleware(
@@ -26,7 +27,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(pdf.router, prefix="/api/v1", tags=["pdf"])
-app.include_router(query.router, prefix="/api/v1", tags=["query"])  # Add query router
+app.include_router(query.router, prefix="/api/v1", tags=["query"])
+app.include_router(resume.router, prefix="/api/v1", tags=["resume"])  # Add resume router
 
 
 
@@ -46,7 +48,8 @@ async def root():
 
 # Include routers
 app.include_router(pdf.router, prefix="/api/v1", tags=["pdf"])
-app.include_router(query.router, prefix="/api/v1", tags=["query"])  # Add query router
+app.include_router(query.router, prefix="/api/v1", tags=["query"])
+app.include_router(resume.router, prefix="/api/v1", tags=["resume"])  # Add resume router
 
 @app.on_event("startup")
 async def startup_db_client():

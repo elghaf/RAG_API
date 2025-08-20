@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DashboardPanel } from './DashboardPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import VisualizationPanel from './VisualizationPanel';
 
 interface Message {
   timestamp: string;
@@ -24,6 +23,7 @@ interface ChatPanelProps {
   messages: Message[];
   loading: boolean;
   connected: boolean;
+  sendMessage?: (message: string) => void;
 }
 
 export const ChatPanel = ({
@@ -32,6 +32,7 @@ export const ChatPanel = ({
   messages,
   loading,
   connected,
+  sendMessage,
 }: ChatPanelProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<Message[]>(messages || []);
@@ -261,12 +262,12 @@ export const ChatPanel = ({
       </div>
 
       {/* Visualization Panel */}
-      <VisualizationPanel selectedPage={selectedFile?.id} snapshotData={snapshotData} />
+      <LocalVisualizationPanel selectedPage={selectedFile?.id} snapshotData={snapshotData} />
     </DashboardPanel>
   );
 };
 
-const VisualizationPanel = ({ selectedPage, snapshotData }) => {
+const LocalVisualizationPanel = ({ selectedPage, snapshotData }: { selectedPage?: string; snapshotData?: string | null }) => {
   return (
     <div className="visualization-panel">
       <h2>Visualization</h2>
